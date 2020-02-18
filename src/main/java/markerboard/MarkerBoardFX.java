@@ -4,14 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import freemarker.template.TemplateException;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.ToolBar;
+import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -27,9 +26,9 @@ public class MarkerBoardFX extends Application {
     private static final String TEMPLATE_PERSIST = "TEMPLATE_PERSIST";
     private static final String DATA_MODEL_PERSIST = "DATA_MODEL_PERSIST";
     private static final String INCLUDE_QUOTES_PERSIST = "INCLUDE_QUOTES_PERSIST";
+    private static final String RENDER_AUTOMATICALLY_PERSIST = "RENDER_AUTOMATICALLY_PERSIST";
 
     private Preferences prefs = Preferences.userRoot().node(this.getClass().getName());
-
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -37,6 +36,7 @@ public class MarkerBoardFX extends Application {
     private TextArea dataBox;
     private TextArea outputBox;
     private CheckBox includeQuotesChkBox;
+    private CheckBox renderAutomaticallyChkBox;
 
     private final double prefWidth = 1300;
     private final double prefHeight = 780;
@@ -47,19 +47,23 @@ public class MarkerBoardFX extends Application {
     public void start(Stage stage) {
 
         stage.setTitle("Markerboard");
+        stage.getIcons().add(new Image("pen.png"));
 
         // get last stored template & datamodel from preferences
         String lastTemplate = prefs.get(TEMPLATE_PERSIST, "");
         String lastDataModel = prefs.get(DATA_MODEL_PERSIST, "");
         // get other params
         boolean lastIncludeQuotes = prefs.getBoolean(INCLUDE_QUOTES_PERSIST, true);
+        boolean lastRenderAutomatically = prefs.getBoolean(RENDER_AUTOMATICALLY_PERSIST, true);
         FreemarkerEngine.setFreemarkerIncludeJacksonTextNodeQuotes(lastIncludeQuotes);
 
         templateBox = new TextArea(lastTemplate);
         templateBox.setPromptText("template");
+        templateBox.textProperty().addListener(change -> this.dataOrTemplateChanged());
 
         dataBox = new TextArea(lastDataModel);
         dataBox.setPromptText("data model");
+        dataBox.textProperty().addListener(change -> this.dataOrTemplateChanged());
 
         outputBox = new TextArea();
         outputBox.setPromptText("output");
@@ -68,14 +72,17 @@ public class MarkerBoardFX extends Application {
 
         Button renderBtn = new Button();
         renderBtn.setText("Render");
-        renderBtn.setOnAction(this.handleRenderTemplate);
+        renderBtn.setOnAction(action ->{this.renderTemplate();});
 
         includeQuotesChkBox = new CheckBox("Include quotes on TextNode");
-        includeQuotesChkBox.setOnAction(event -> {FreemarkerEngine.setFreemarkerIncludeJacksonTextNodeQuotes(includeQuotesChkBox.isSelected());});
+        includeQuotesChkBox.setOnAction(event -> FreemarkerEngine.setFreemarkerIncludeJacksonTextNodeQuotes(includeQuotesChkBox.isSelected()));
         includeQuotesChkBox.setSelected(lastIncludeQuotes);
 
+        renderAutomaticallyChkBox = new CheckBox("Render Automatically");
+        renderAutomaticallyChkBox.setSelected(lastRenderAutomatically);
 
-        ToolBar toolbar = new ToolBar(renderBtn, includeQuotesChkBox);
+
+        ToolBar toolbar = new ToolBar(renderBtn, includeQuotesChkBox, renderAutomaticallyChkBox);
         toolbar.setPadding(new Insets(5,5,5,5));
 
 
@@ -98,6 +105,7 @@ public class MarkerBoardFX extends Application {
         VBox.setVgrow(gridPane, Priority.ALWAYS);
 
         Scene scene = new Scene(outerVBox, prefWidth, prefHeight);
+        scene.getStylesheets().add("dark.css");
         stage.setScene(scene);
         stage.show();
 
@@ -105,7 +113,7 @@ public class MarkerBoardFX extends Application {
 
 
 
-    private EventHandler<ActionEvent> handleRenderTemplate = actionEvent -> {
+    private void renderTemplate() {
         try {
             ObjectNode rootNode = (ObjectNode) objectMapper.readTree(dataBox.getText());
             String template = templateBox.getText();
@@ -115,17 +123,29 @@ public class MarkerBoardFX extends Application {
         catch (IOException | TemplateException ex){
             outputBox.setText(ex.getMessage());
         }
-    };
+    }
+
+    private void dataOrTemplateChanged() {
+        if(this.renderAutomaticallyChkBox.isSelected()) {
+            this.renderTemplate();
+        }
+    }
 
 
 
 
+    // called when program is exited normally
     @Override
     public void stop() {
-        // store text boxes so they can be reloaded later
+        saveState();
+    }
+
+    private void saveState() {
+        // store controls & text boxes to restore them on startup
         prefs.put(TEMPLATE_PERSIST, templateBox.getText());
         prefs.put(DATA_MODEL_PERSIST, dataBox.getText());
         prefs.putBoolean(INCLUDE_QUOTES_PERSIST, includeQuotesChkBox.isSelected());
+        prefs.putBoolean(RENDER_AUTOMATICALLY_PERSIST, renderAutomaticallyChkBox.isSelected());
     }
 
 
