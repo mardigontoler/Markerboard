@@ -1,4 +1,4 @@
-# markerboard.Markerboard
+# Markerboard
 
 This is a simple GUI that lets you test out Freemarker templates.
 On the left-hand side, you write Freemarker templates and JSON to be
