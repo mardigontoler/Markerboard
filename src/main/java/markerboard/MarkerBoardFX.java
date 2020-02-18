@@ -46,13 +46,14 @@ public class MarkerBoardFX extends Application {
     @Override
     public void start(Stage stage) {
 
-        stage.setTitle("markerboard.Markerboard");
+        stage.setTitle("Markerboard");
 
         // get last stored template & datamodel from preferences
         String lastTemplate = prefs.get(TEMPLATE_PERSIST, "");
         String lastDataModel = prefs.get(DATA_MODEL_PERSIST, "");
         // get other params
         boolean lastIncludeQuotes = prefs.getBoolean(INCLUDE_QUOTES_PERSIST, true);
+        FreemarkerEngine.setFreemarkerIncludeJacksonTextNodeQuotes(lastIncludeQuotes);
 
         templateBox = new TextArea(lastTemplate);
         templateBox.setPromptText("template");
