@@ -1,7 +1,9 @@
 package markerboard;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import freemarker.template.*;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import markerboard.util.ArrayNodeAwareObjectWrapper;
 
 import java.io.IOException;
@@ -30,11 +32,5 @@ public class FreemarkerEngine {
         return w.toString();
     }
 
-    public static void setFreemarkerIncludeJacksonTextNodeQuotes(boolean includeQuotes) {
-        ObjectWrapper wrapper = freemarkerConfiguration.getObjectWrapper();
-        if(wrapper instanceof ArrayNodeAwareObjectWrapper) {
-            ((ArrayNodeAwareObjectWrapper)wrapper).setIncludeQuotesOnTextNodes(includeQuotes);
-        }
-    }
 
 }

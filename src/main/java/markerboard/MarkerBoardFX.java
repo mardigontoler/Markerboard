@@ -25,7 +25,6 @@ public class MarkerBoardFX extends Application {
     // constants for preferences names
     private static final String TEMPLATE_PERSIST = "TEMPLATE_PERSIST";
     private static final String DATA_MODEL_PERSIST = "DATA_MODEL_PERSIST";
-    private static final String INCLUDE_QUOTES_PERSIST = "INCLUDE_QUOTES_PERSIST";
     private static final String RENDER_AUTOMATICALLY_PERSIST = "RENDER_AUTOMATICALLY_PERSIST";
 
     private Preferences prefs = Preferences.userRoot().node(this.getClass().getName());
@@ -35,7 +34,6 @@ public class MarkerBoardFX extends Application {
     private TextArea templateBox;
     private TextArea dataBox;
     private TextArea outputBox;
-    private CheckBox includeQuotesChkBox;
     private CheckBox renderAutomaticallyChkBox;
 
     private final double prefWidth = 1300;
@@ -53,9 +51,7 @@ public class MarkerBoardFX extends Application {
         String lastTemplate = prefs.get(TEMPLATE_PERSIST, "");
         String lastDataModel = prefs.get(DATA_MODEL_PERSIST, "");
         // get other params
-        boolean lastIncludeQuotes = prefs.getBoolean(INCLUDE_QUOTES_PERSIST, true);
         boolean lastRenderAutomatically = prefs.getBoolean(RENDER_AUTOMATICALLY_PERSIST, true);
-        FreemarkerEngine.setFreemarkerIncludeJacksonTextNodeQuotes(lastIncludeQuotes);
 
         templateBox = new TextArea(lastTemplate);
         templateBox.setPromptText("template");
@@ -74,15 +70,12 @@ public class MarkerBoardFX extends Application {
         renderBtn.setText("Render");
         renderBtn.setOnAction(action ->{this.renderTemplate();});
 
-        includeQuotesChkBox = new CheckBox("Include quotes on TextNode");
-        includeQuotesChkBox.setOnAction(event -> FreemarkerEngine.setFreemarkerIncludeJacksonTextNodeQuotes(includeQuotesChkBox.isSelected()));
-        includeQuotesChkBox.setSelected(lastIncludeQuotes);
 
         renderAutomaticallyChkBox = new CheckBox("Render Automatically");
         renderAutomaticallyChkBox.setSelected(lastRenderAutomatically);
 
 
-        ToolBar toolbar = new ToolBar(renderBtn, includeQuotesChkBox, renderAutomaticallyChkBox);
+        ToolBar toolbar = new ToolBar(renderBtn, renderAutomaticallyChkBox);
         toolbar.setPadding(new Insets(5,5,5,5));
 
 
@@ -144,7 +137,6 @@ public class MarkerBoardFX extends Application {
         // store controls & text boxes to restore them on startup
         prefs.put(TEMPLATE_PERSIST, templateBox.getText());
         prefs.put(DATA_MODEL_PERSIST, dataBox.getText());
-        prefs.putBoolean(INCLUDE_QUOTES_PERSIST, includeQuotesChkBox.isSelected());
         prefs.putBoolean(RENDER_AUTOMATICALLY_PERSIST, renderAutomaticallyChkBox.isSelected());
     }
 

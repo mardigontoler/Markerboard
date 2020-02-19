@@ -2,10 +2,8 @@ package markerboard.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import freemarker.template.*;
 import lombok.NonNull;
-import lombok.Setter;
 
 import java.util.Optional;
 
@@ -46,28 +44,19 @@ import java.util.Optional;
  * In addition, if this object exposes an "iterator" method that you can call from
  * freemarker that yields an iterator over the JsonNodes in the ArrayNode
  */
-public class JsonNodeTemplateAdapter extends WrappingTemplateModel implements TemplateSequenceModel, AdapterTemplateModel, TemplateHashModel {
+public class ArrayNodeTemplateAdapter extends WrappingTemplateModel implements TemplateSequenceModel, AdapterTemplateModel, TemplateHashModel {
 
-    private boolean isArrayNode;
-    private final JsonNode jsonNode;
+    private final ArrayNode arrayNode;
 
-    @Setter
-    private boolean includeQuotesOnTextNode = true;  // TextNodes have quotes when evaluated, by default
-
-
-    public JsonNodeTemplateAdapter(JsonNode jsonNode, ObjectWrapper ow, boolean includeQuotesOnTextNode) {
+    public ArrayNodeTemplateAdapter(ArrayNode arrayNode, ObjectWrapper ow) {
         super(ow);
-        this.jsonNode = jsonNode;
-        this.includeQuotesOnTextNode = includeQuotesOnTextNode;
-        this.isArrayNode = jsonNode instanceof ArrayNode;
+        this.arrayNode = arrayNode;
     }
 
 
     @Override
     public int size() throws TemplateModelException {
-        if(isArrayNode)
-            return jsonNode.size();
-        else throw new TemplateModelException("Cannot access size. Not an array node.");
+        return arrayNode.size();
     }
 
 
@@ -81,17 +70,13 @@ public class JsonNodeTemplateAdapter extends WrappingTemplateModel implements Te
     @Override
     public TemplateModel get(int index) throws TemplateModelException {
         // make sure that the object returned is also wrapped to the freemarker model
-        if(isArrayNode) {
-            JsonNode node = jsonNode.get(index);
-            return getWrappedValue(node);
-        }
-        else throw new TemplateModelException("Cannot get with index, not an array node!");
+        return wrap(arrayNode.get(index));
     }
 
 
     @Override
     public Object getAdaptedObject(Class hint) {
-        return jsonNode;
+        return arrayNode;
     }
 
 
@@ -110,15 +95,14 @@ public class JsonNodeTemplateAdapter extends WrappingTemplateModel implements Te
         // Essentially, if this model _seems_ to be used as a hash but the property is
         // called iterator, then we instead return a TemplateMethodModelEx that's the Iterator<JsonNode>
         // of the ArrayNode
-        if(jsonNode instanceof ObjectNode) return getWrappedValue(jsonNode.get(key));
-        if(key.equals("iterator") && isArrayNode) {
-            return (TemplateMethodModelEx) args -> wrap(jsonNode.iterator());
+        if(key.equals("iterator")) {
+            return (TemplateMethodModelEx) args -> wrap(arrayNode.iterator());
         }
         else {
             // search for a the value in a name/value node that has a name matching the key
-            Optional<JsonNode> matchingValue = this.findAsNameValuePairValue(key);
-            if (matchingValue.isPresent()){
-                return getWrappedValue(matchingValue.get());
+            Optional<JsonNode> matchingNameValuePairNode = this.findNameValuePair(key);
+            if (matchingNameValuePairNode.isPresent()){
+                return wrap(matchingNameValuePairNode.get());
             }
             else {
                 throw new TemplateModelException(key + " is not a known element of this ArrayNode object");
@@ -129,11 +113,7 @@ public class JsonNodeTemplateAdapter extends WrappingTemplateModel implements Te
 
     @Override
     public boolean isEmpty() throws TemplateModelException {
-        try {
-        return jsonNode.size() == 0;
-        } catch (Exception e){
-            throw new TemplateModelException("Error getting size of node");
-        }
+        return arrayNode.size() == 0;
     }
 
 
@@ -143,24 +123,15 @@ public class JsonNodeTemplateAdapter extends WrappingTemplateModel implements Te
      * @param key
      * @return
      */
-    Optional<JsonNode> findAsNameValuePairValue(@NonNull String key) {
-        if(!isArrayNode) return Optional.empty();
-        for(JsonNode currentNode : this.jsonNode) {
-            if ( !currentNode.isObject() || !currentNode.has("name") || !currentNode.has("value")) {
+    Optional<JsonNode> findNameValuePair(@NonNull String key) {
+        for(JsonNode jsonNode : this.arrayNode) {
+            if ( !jsonNode.isObject() || !jsonNode.has("name") || !jsonNode.has("value")) {
                 return Optional.empty(); // short circuit return false. This isn't an array of name/value pairs.
             }
-            if (currentNode.get("name").textValue().equals(key)){
-                return Optional.of(currentNode.get("value"));
+            if (jsonNode.get("name").textValue().equals(key)){
+                return Optional.of(jsonNode.get("value"));
             }
         }
         return Optional.empty();
-    }
-
-
-    TemplateModel getWrappedValue(JsonNode node) throws TemplateModelException {
-        if(node.isTextual() && !includeQuotesOnTextNode){
-            return wrap(node.textValue());
-        }
-        return wrap(node);
     }
 }
