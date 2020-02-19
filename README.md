@@ -7,6 +7,11 @@ of processing the template with that data model.
 The data model you pass in is wrapped in a singleton map called
 `root`. 
 
+
+![Screenshot of Markerboard](screenshot.png)
+
+
+
 This program uses the Jackson library to deserialize the 
 JSON you enter into an `ObjectNode`. `ArrayNodes` are not natively
 handled correctly by Freemarker, so this program also uses a custom Freemarker
@@ -38,18 +43,25 @@ The value of x is ${root.valuePair.x}.
 
 
 ## Build & Run
+This program requires JDK11 (tested with openjdk11).
 To build and run the program, use Maven:
 ```
-mvn run
+mvn javafx:run
 ```
+To produce an executable jar that you can click on to run,
+use 
+```
+mvn compile package
+```
+The resulting jar will be in the `shade` directory.
 
 
 ## Example
 Example Freemarker template:
 ```ftl
-Name: ${root.}
+Name: ${root.firstName}
+Phone: ${root.phoneNumbers?first.number}
 ```
-
 
 Example JSON data model:
 ```json
