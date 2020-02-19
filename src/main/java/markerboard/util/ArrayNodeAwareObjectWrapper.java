@@ -27,7 +27,7 @@ public class ArrayNodeAwareObjectWrapper extends DefaultObjectWrapper {
 
     public ArrayNodeAwareObjectWrapper(Version incompatibleImprovements) {
         super(incompatibleImprovements);
-        includeQuotesOnTextNodes = false; // default
+        includeQuotesOnTextNodes = true; // default
     }
 
 
